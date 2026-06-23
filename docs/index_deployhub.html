@@ -1,0 +1,186 @@
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Georgia,serif;color:#1a1a1a;line-height:1.6;position:relative;min-height:100vh;background:#fdf6f0;}
+
+.bg-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;}
+.blob{position:absolute;border-radius:50%;opacity:0.55;}
+.b1{width:420px;height:420px;background:#f9d4e0;top:-80px;left:-100px;}
+.b2{width:360px;height:360px;background:#d4eaf9;top:60px;right:-80px;}
+.b3{width:300px;height:300px;background:#d4f9e8;top:380px;left:60px;}
+.b4{width:260px;height:260px;background:#f9f0d4;top:700px;right:40px;}
+.b5{width:340px;height:340px;background:#e8d4f9;top:1100px;left:-60px;}
+.b6{width:280px;height:280px;background:#f9d4d4;top:1500px;right:-40px;}
+.b7{width:320px;height:320px;background:#d4f4f9;top:1900px;left:80px;}
+.b8{width:260px;height:260px;background:#f9ecd4;top:2400px;right:20px;}
+.b9{width:300px;height:300px;background:#ddf9d4;top:2800px;left:-40px;}
+
+.wrap{position:relative;z-index:1;}
+
+a{color:inherit;text-decoration:none;}
+nav{border-bottom:1px solid rgba(0,0,0,0.08);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;background:rgba(253,246,240,0.7);backdrop-filter:blur(10px);}
+.logo{font-family:monospace;font-size:15px;font-weight:bold;letter-spacing:0.03em;color:#6b4f8a;}
+.nav-links{display:flex;gap:24px;font-family:monospace;font-size:13px;}
+.nav-links a{color:#666;transition:color 0.15s;}
+.nav-links a:hover{color:#6b4f8a;}
+
+.hero{padding:64px 32px 52px;max-width:700px;}
+.tag{font-family:monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#6b4f8a;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.tag::before{content:'';width:20px;height:1px;background:#6b4f8a;}
+.hero h1{font-size:34px;font-weight:normal;line-height:1.25;margin-bottom:16px;color:#1a1a1a;}
+.hero p{font-size:15px;color:#555;margin-bottom:28px;max-width:520px;}
+.btns{display:flex;gap:10px;flex-wrap:wrap;}
+.btn{font-family:monospace;font-size:13px;padding:9px 18px;display:inline-flex;align-items:center;gap:8px;transition:all 0.15s;border-radius:4px;}
+.btn-main{background:#6b4f8a;color:#fff;border:1px solid #6b4f8a;}
+.btn-main:hover{background:#533c6e;}
+.btn-gh{border:1px solid #ccc;color:#444;background:rgba(255,255,255,0.6);}
+.btn-gh:hover{border-color:#6b4f8a;color:#6b4f8a;background:rgba(255,255,255,0.9);}
+.btn-plain{border:1px solid #ccc;color:#444;background:rgba(255,255,255,0.6);}
+.btn-plain:hover{border-color:#6b4f8a;color:#6b4f8a;background:rgba(255,255,255,0.9);}
+
+.divider{border:none;border-top:1px solid rgba(0,0,0,0.08);margin:0 32px;}
+
+.section{padding:48px 32px;max-width:800px;}
+h2{font-size:20px;font-weight:normal;margin-bottom:24px;color:#1a1a1a;}
+
+.flow{display:flex;flex-direction:column;}
+.step{display:flex;gap:20px;padding-bottom:24px;position:relative;}
+.step:not(:last-child)::before{content:'';position:absolute;left:7px;top:22px;bottom:0;width:1px;background:#d8c8ef;}
+.step-dot{width:15px;height:15px;border-radius:50%;border:2px solid #6b4f8a;background:#f3eefa;flex-shrink:0;margin-top:4px;}
+.step-name{font-family:monospace;font-size:14px;font-weight:bold;color:#6b4f8a;margin-bottom:3px;}
+.step-desc{font-size:14px;color:#555;}
+
+.stack-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.07);border-radius:6px;overflow:hidden;}
+.stack-cell{background:rgba(255,255,255,0.55);padding:16px;backdrop-filter:blur(6px);}
+.stack-cat{font-family:monospace;font-size:11px;color:#6b4f8a;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;}
+.stack-item{font-size:14px;color:#333;}
+
+.nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:20px;}
+.num-card{background:rgba(255,255,255,0.55);border:1px solid rgba(0,0,0,0.07);border-radius:8px;padding:18px 16px;backdrop-filter:blur(6px);}
+.num-val{font-family:monospace;font-size:30px;color:#6b4f8a;}
+.num-label{font-size:13px;color:#666;margin-top:4px;}
+
+.note{border-left:3px solid #b39ddb;padding:16px 20px;background:rgba(255,255,255,0.5);font-size:14px;color:#444;line-height:1.7;backdrop-filter:blur(4px);}
+.note code{font-family:monospace;font-size:13px;background:#ede7f6;padding:1px 5px;color:#4a2f6e;border-radius:3px;}
+
+.progress{display:flex;flex-direction:column;}
+.prog-row{display:flex;align-items:flex-start;gap:14px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.07);font-size:14px;}
+.prog-row:last-child{border-bottom:none;}
+.prog-tag{font-family:monospace;font-size:11px;color:#6b4f8a;min-width:72px;padding-top:1px;}
+.prog-text{color:#555;}
+.prog-text strong{color:#1a1a1a;font-weight:500;}
+
+footer{padding:36px 32px;border-top:1px solid rgba(0,0,0,0.08);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;background:rgba(253,246,240,0.5);}
+.footer-note{font-family:monospace;font-size:12px;color:#999;}
+.footer-links{display:flex;gap:18px;font-family:monospace;font-size:13px;align-items:center;}
+.footer-links a{color:#666;display:inline-flex;align-items:center;gap:6px;transition:color 0.15s;}
+.footer-links a:hover{color:#6b4f8a;}
+</style>
+
+<div class="bg-canvas">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="blob b4"></div>
+  <div class="blob b5"></div>
+  <div class="blob b6"></div>
+  <div class="blob b7"></div>
+  <div class="blob b8"></div>
+  <div class="blob b9"></div>
+</div>
+
+<div class="wrap">
+
+<nav>
+  <div class="logo">DEPLOYHUB</div>
+  <div class="nav-links">
+    <a href="#arch">architecture</a>
+    <a href="#stack">stack</a>
+    <a href="#outcomes">outcomes</a>
+    <a href="#proof">progress</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="tag">aws · multi-tenant saas backend</div>
+  <h1>One shared system.<br>Zero cross-tenant data leakage.</h1>
+  <p>A task management API serving multiple isolated companies from the same Lambda functions, same database — separated by a single enforced rule on every query.</p>
+  <div class="btns">
+    <a href="#" class="btn btn-main">open dashboard ↗</a>
+    <a href="https://github.com/Akhiladussa/Deployhub" class="btn btn-gh">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+      view on github
+    </a>
+    <a href="#" class="btn btn-plain">watch demo (4 min)</a>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section" id="arch">
+  <h2>How a request flows</h2>
+  <div class="flow">
+    <div class="step"><div class="step-dot"></div><div><div class="step-name">cognito</div><div class="step-desc">Validates the JWT and confirms which tenant the request belongs to before anything else runs.</div></div></div>
+    <div class="step"><div class="step-dot"></div><div><div class="step-name">api gateway</div><div class="step-desc">Single entry point for every tenant. Routes to the same Lambda functions regardless of who's calling.</div></div></div>
+    <div class="step"><div class="step-dot"></div><div><div class="step-name">lambda</div><div class="step-desc">Extracts tenant_id from the verified token — never from request input — and attaches it to every database call.</div></div></div>
+    <div class="step"><div class="step-dot"></div><div><div class="step-name">rds + dynamodb</div><div class="step-desc">One shared table per resource. Every query carries a mandatory WHERE tenant_id filter.</div></div></div>
+    <div class="step"><div class="step-dot"></div><div><div class="step-name">sqs + sns + cloudwatch</div><div class="step-desc">Background processing for activity logs and alerts, with full observability across every step above.</div></div></div>
+  </div>
+  <div class="note" style="margin-top:8px;">
+    The core rule: every tenant shares the same <code>tasks</code> table, the same Lambda code, the same API. Isolation is enforced entirely by filtering every query on <code>tenant_id</code> — extracted from the verified JWT, never trusted from request input.
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section" id="stack">
+  <h2>Stack</h2>
+  <div class="stack-list">
+    <div class="stack-cell"><div class="stack-cat">identity</div><div class="stack-item">Cognito</div><div class="stack-item">IAM</div><div class="stack-item">Secrets Manager</div></div>
+    <div class="stack-cell"><div class="stack-cat">compute</div><div class="stack-item">Lambda</div><div class="stack-item">API Gateway</div></div>
+    <div class="stack-cell"><div class="stack-cat">data</div><div class="stack-item">RDS PostgreSQL</div><div class="stack-item">DynamoDB</div></div>
+    <div class="stack-cell"><div class="stack-cat">messaging</div><div class="stack-item">SQS</div><div class="stack-item">SNS</div></div>
+    <div class="stack-cell"><div class="stack-cat">delivery</div><div class="stack-item">CodePipeline</div><div class="stack-item">CodeBuild</div></div>
+    <div class="stack-cell"><div class="stack-cat">observability</div><div class="stack-item">CloudWatch</div></div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section" id="outcomes">
+  <h2>Outcomes</h2>
+  <div class="nums">
+    <div class="num-card"><div class="num-val">0</div><div class="num-label">cross-tenant data leaks across all tested endpoints</div></div>
+    <div class="num-card"><div class="num-val">13</div><div class="num-label">AWS services integrated into one working system</div></div>
+    <div class="num-card"><div class="num-val">100%</div><div class="num-label">of deploys automated through CodePipeline</div></div>
+    <div class="num-card"><div class="num-val">4</div><div class="num-label">CRUD endpoints, each authenticated and tenant-scoped</div></div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section" id="proof">
+  <h2>Build progress</h2>
+  <div class="progress">
+    <div class="prog-row"><span class="prog-tag">week 1–2</span><span class="prog-text"><strong>VPC + databases</strong> — networking foundation, RDS and DynamoDB schema</span></div>
+    <div class="prog-row"><span class="prog-tag">week 3</span><span class="prog-text"><strong>Cognito auth</strong> — user pools, JWT issuing, tenant claims</span></div>
+    <div class="prog-row"><span class="prog-tag">week 4–5</span><span class="prog-text"><strong>Serverless API</strong> — full CRUD, tenant-scoped queries, IAM hardening</span></div>
+    <div class="prog-row"><span class="prog-tag">week 6</span><span class="prog-text"><strong>Async events</strong> — SQS processing, SNS notifications, DLQ</span></div>
+    <div class="prog-row"><span class="prog-tag">week 7</span><span class="prog-text"><strong>CI/CD pipeline</strong> — automated deploys on push to main</span></div>
+    <div class="prog-row"><span class="prog-tag">week 8</span><span class="prog-text"><strong>Observability</strong> — dashboards, alarms, final docs and demo</span></div>
+  </div>
+</div>
+
+<footer>
+  <span class="footer-note">deployhub — built week by week, documented as it happens</span>
+  <div class="footer-links">
+    <a href="#">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+      github
+    </a>
+    <a href="#">dashboard</a>
+    <a href="#">demo</a>
+  </div>
+</footer>
+
+</div>
