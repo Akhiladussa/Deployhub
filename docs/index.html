@@ -250,7 +250,7 @@ footer{padding:36px 32px;border-top:1px solid rgba(0,0,0,0.08);display:flex;just
     <div class="stack-cell"><div class="stack-cat">networking</div><div class="stack-item">VPC</div><div class="stack-item">Subnets</div><div class="stack-item">NAT Gateway</div></div>
     <div class="stack-cell"><div class="stack-cat">compute</div><div class="stack-item">Lambda</div><div class="stack-item">API Gateway</div></div>
     <div class="stack-cell"><div class="stack-cat">data</div><div class="stack-item">RDS PostgreSQL</div><div class="stack-item">DynamoDB</div></div>
-    <div class="stack-cell"><div class="stack-cat">messaging</div><div class="stack-item">SQS</div><div class="stack-item">SNS</div></div>
+    <div class="stack-cell"><div class="stack-cat">messaging</div><div class="stack-item">SQS</div><div class="stack-item">SNS</div><div class="stack-item">DLQ</div></div>
     <div class="stack-cell"><div class="stack-cat">devops</div><div class="stack-item">CodePipeline</div><div class="stack-item">CodeBuild</div></div>
     <div class="stack-cell"><div class="stack-cat">observability</div><div class="stack-item">CloudWatch</div><div class="stack-item">Logs</div><div class="stack-item">Alarms</div></div>
   </div>
@@ -264,7 +264,7 @@ footer{padding:36px 32px;border-top:1px solid rgba(0,0,0,0.08);display:flex;just
   <div class="section-sub">measured and verified — not claimed</div>
   <div class="nums">
     <div class="num-card"><div class="num-val">0</div><div class="num-label">cross-tenant data leaks across all tested endpoints</div></div>
-    <div class="num-card"><div class="num-val">13</div><div class="num-label">AWS services integrated into one working system</div></div>
+    <div class="num-card"><div class="num-val">16</div><div class="num-label">AWS services integrated into one working system</div></div>
     <div class="num-card"><div class="num-val">4</div><div class="num-label">CRUD endpoints, each authenticated and tenant-scoped</div></div>
     <div class="num-card"><div class="num-val">2</div><div class="num-label">isolated tenants tested live with real data in RDS</div></div>
   </div>
@@ -307,10 +307,10 @@ footer{padding:36px 32px;border-top:1px solid rgba(0,0,0,0.08);display:flex;just
       <span class="prog-text"><strong>IAM hardening</strong> — Secrets Manager, least-privilege roles, security review</span>
       <span class="prog-badge badge-pending">upcoming</span>
     </div>
-    <div class="prog-row">
-      <span class="prog-tag pending">day 7–8</span>
-      <span class="prog-text"><strong>Messaging</strong> — SQS async processing, SNS notifications, Dead Letter Queue</span>
-      <span class="prog-badge badge-pending">upcoming</span>
+    <div class="prog-row done">
+      <span class="prog-tag live">day 6 ✓</span>
+      <span class="prog-text"><strong>Async Messaging</strong> — SQS queue, SNS email notifications, worker Lambda, DLQ for failures</span>
+      <span class="prog-badge badge-live">live</span>
     </div>
     <div class="prog-row">
       <span class="prog-tag pending">day 9–10</span>
