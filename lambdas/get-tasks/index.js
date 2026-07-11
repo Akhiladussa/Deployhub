@@ -41,7 +41,8 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         tasks: result.rows,
         count: result.rowCount,
-        tenant_id: tenantId
+        tenant_id: tenantId,
+        version: 'v2-cicd'
       })
     };
 
