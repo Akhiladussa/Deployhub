@@ -1,0 +1,16 @@
+{
+  "name": "update-task",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1079.0",
+    "pg": "^8.22.0"
+  },
+  "description": ""
+}
