@@ -1,0 +1,44 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing dependencies"
+      - cd lambdas/create-task && npm install && cd ../..
+      - cd lambdas/get-tasks && npm install && cd ../..
+      - cd lambdas/update-task && npm install && cd ../..
+      - cd lambdas/delete-task && npm install && cd ../..
+
+  build:
+    commands:
+      - echo "Deploying Lambda functions"
+
+      - cd lambdas/create-task
+      - zip -r create-task.zip .
+      - aws lambda update-function-code --function-name create-task --zip-file fileb://create-task.zip --region ap-south-1
+      - cd ../..
+
+      - cd lambdas/get-tasks
+      - zip -r get-tasks.zip .
+      - aws lambda update-function-code --function-name get-tasks --zip-file fileb://get-tasks.zip --region ap-south-1
+      - cd ../..
+
+      - cd lambdas/update-task
+      - zip -r update-task.zip .
+      - aws lambda update-function-code --function-name update-task --zip-file fileb://update-task.zip --region ap-south-1
+      - cd ../..
+
+      - cd lambdas/delete-task
+      - zip -r delete-task.zip .
+      - aws lambda update-function-code --function-name delete-task --zip-file fileb://delete-task.zip --region ap-south-1
+      - cd ../..
+
+  post_build:
+    commands:
+      - echo "All Lambdas deployed on $(date)"
+
+artifacts:
+  files:
+    - '**/*'
