@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeployHub — Live Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:#0f1117; color:#e8e9ed; min-height:100vh; }
+.nav { display:flex; justify-content:space-between; align-items:center; padding:16px 32px; border-bottom:1px solid #1e2130; }
+.logo { font-family:'JetBrains Mono',monospace; font-size:14px; color:#7f77dd; font-weight:500; }
+.tenant-badge { font-family:'JetBrains Mono',monospace; font-size:11px; padding:4px 10px; border-radius:4px; background:#1e2130; border:1px solid #2a2f3d; }
+.main { max-width:900px; margin:0 auto; padding:40px 32px; }
+.login-card { background:#1a1e26; border:1px solid #2a2f3d; border-radius:12px; padding:40px; max-width:420px; margin:60px auto; }
+.login-card h2 { font-size:20px; font-weight:500; margin-bottom:8px; }
+.login-card p { font-size:13px; color:#8b91a0; margin-bottom:28px; }
+.form-group { margin-bottom:16px; }
+label { display:block; font-size:12px; color:#8b91a0; margin-bottom:6px; font-family:'JetBrains Mono',monospace; }
+input { width:100%; padding:10px 12px; background:#0f1117; border:1px solid #2a2f3d; border-radius:6px; color:#e8e9ed; font-size:14px; outline:none; }
+input:focus { border-color:#534ab7; }
+.btn { width:100%; padding:11px; background:#534ab7; color:#fff; border:none; border-radius:6px; font-size:14px; font-weight:500; cursor:pointer; transition:background .15s; margin-top:8px; }
+.btn:hover { background:#6b62cc; }
+.btn-secondary { background:#1e2130; color:#e8e9ed; border:1px solid #2a2f3d; }
+.btn-secondary:hover { background:#252a38; }
+.btn-small { width:auto; padding:7px 14px; font-size:12px; font-family:'JetBrains Mono',monospace; margin-top:0; }
+.quick-login { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px; }
+.quick-btn { padding:10px; background:#1e2130; border:1px solid #2a2f3d; border-radius:6px; color:#e8e9ed; font-size:12px; cursor:pointer; text-align:center; transition:all .15s; font-family:'JetBrains Mono',monospace; }
+.quick-btn:hover { border-color:#534ab7; }
+.quick-btn.active { border-color:#22c55e; background:rgba(34,197,94,.1); }
+.divider { text-align:center; color:#565d6d; font-size:12px; margin:16px 0; }
+#app { display:none; }
+.header-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
+.header-row h1 { font-size:22px; font-weight:500; }
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:28px; }
+.stat-box { background:#1a1e26; border:1px solid #2a2f3d; border-radius:10px; padding:18px 16px; }
+.stat-num { font-size:28px; font-weight:500; font-family:'JetBrains Mono',monospace; }
+.stat-num.green { color:#22c55e; }
+.stat-num.purple { color:#7f77dd; }
+.stat-num.amber { color:#f2a33c; }
+.stat-label { font-size:12px; color:#8b91a0; margin-top:4px; }
+.create-row { display:flex; gap:10px; margin-bottom:24px; }
+.create-row input { flex:1; }
+.create-row .btn { width:auto; padding:10px 18px; }
+.task-list { display:flex; flex-direction:column; gap:8px; }
+.task-card { background:#1a1e26; border:1px solid #2a2f3d; border-radius:8px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.task-card:hover { border-color:#2e3448; }
+.task-status { font-size:11px; padding:3px 8px; border-radius:4px; font-family:'JetBrains Mono',monospace; flex-shrink:0; }
+.status-pending { background:rgba(242,163,60,.15); color:#f2a33c; }
+.status-completed { background:rgba(34,197,94,.15); color:#22c55e; }
+.task-title { flex:1; font-size:14px; }
+.task-date { font-size:11px; color:#565d6d; font-family:'JetBrains Mono',monospace; flex-shrink:0; }
+.task-del { background:none; border:none; color:#565d6d; cursor:pointer; font-size:16px; padding:0 4px; }
+.task-del:hover { color:#e24b4a; }
+.empty { text-align:center; color:#565d6d; font-size:14px; padding:40px; }
+.proof-box { background:rgba(34,197,94,.06); border:1px solid rgba(34,197,94,.2); border-radius:10px; padding:20px; margin-top:28px; }
+.proof-title { font-family:'JetBrains Mono',monospace; font-size:12px; color:#22c55e; margin-bottom:12px; }
+.proof-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.proof-card { background:#1a1e26; border-radius:8px; padding:12px 14px; }
+.proof-tenant { font-size:11px; color:#8b91a0; margin-bottom:4px; font-family:'JetBrains Mono',monospace; }
+.proof-count { font-size:20px; font-weight:500; }
+.proof-count.a { color:#7f77dd; }
+.proof-count.b { color:#5dbfa8; }
+.proof-note { font-size:11px; color:#565d6d; margin-top:3px; }
+.error { color:#e24b4a; font-size:13px; margin-top:8px; text-align:center; }
+.loading { color:#8b91a0; font-size:13px; text-align:center; padding:20px; }
+.switch-row { display:flex; gap:8px; align-items:center; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo">DEPLOYHUB</div>
+  <div id="nav-tenant" class="tenant-badge" style="display:none">not logged in</div>
+</nav>
+
+<div id="login-view" class="main">
+  <div class="login-card">
+    <h2>Live Dashboard</h2>
+    <p>Sign in with a test account to see the multi-tenant isolation working live.</p>
+
+    <div class="quick-login">
+      <div class="quick-btn" id="qa-btn" onclick="quickLogin('A')">
+        Company A<br>
+        <span style="color:#565d6d;font-size:10px">companyA@test.com</span>
+      </div>
+      <div class="quick-btn" id="qb-btn" onclick="quickLogin('B')">
+        Company B<br>
+        <span style="color:#565d6d;font-size:10px">companyB@test.com</span>
+      </div>
+    </div>
+
+    <div class="divider">or sign in manually</div>
+
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="companyA@test.com">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="TestPass123!">
+    </div>
+    <button class="btn" onclick="login()">Sign in</button>
+    <div id="login-error" class="error"></div>
+  </div>
+</div>
+
+<div id="app" class="main">
+  <div class="header-row">
+    <h1 id="app-title">Tasks</h1>
+    <div class="switch-row">
+      <span style="font-size:13px;color:#8b91a0">Switch tenant:</span>
+      <button class="btn btn-secondary btn-small" onclick="switchTenant('A')">Company A</button>
+      <button class="btn btn-secondary btn-small" onclick="switchTenant('B')">Company B</button>
+      <button class="btn btn-secondary btn-small" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-num purple" id="task-count">—</div>
+      <div class="stat-label">tasks this tenant</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num green" id="tenant-id-display">—</div>
+      <div class="stat-label">tenant ID (short)</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num amber" id="api-status">live</div>
+      <div class="stat-label">API status</div>
+    </div>
+  </div>
+
+  <div class="create-row">
+    <input type="text" id="new-task-title" placeholder="New task title..." onkeydown="if(event.key==='Enter')createTask()">
+    <button class="btn btn-small" onclick="createTask()">+ Create task</button>
+  </div>
+
+  <div id="task-list" class="task-list">
+    <div class="loading">Loading tasks...</div>
+  </div>
+
+  <div class="proof-box">
+    <div class="proof-title">isolation proof — live</div>
+    <div class="proof-row">
+      <div class="proof-card">
+        <div class="proof-tenant">Company A token returns</div>
+        <div class="proof-count a" id="proof-a">—</div>
+        <div class="proof-note">tasks visible to Company A only</div>
+      </div>
+      <div class="proof-card">
+        <div class="proof-tenant">Company B token returns</div>
+        <div class="proof-count b" id="proof-b">—</div>
+        <div class="proof-note">tasks visible to Company B only</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CONFIG = {
+  API_URL: 'https://ksh3sl6abk.execute-api.ap-south-1.amazonaws.com/dev',
+  CLIENT_ID: '90pd9rt6ae9b7r2caapih4df8',
+  REGION: 'ap-south-1',
+  USER_POOL_ID: 'ap-south-1_ubeh1TDWD'
+};
+
+const USERS = {
+  A: { email: 'companyA@test.com', password: 'TestPass123!' },
+  B: { email: 'companyB@test.com', password: 'TestPass123!' }
+};
+
+let currentToken = null;
+let currentUser = null;
+
+async function callCognito(body) {
+  const res = await fetch(
+    `https://cognito-idp.${CONFIG.REGION}.amazonaws.com/`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-amz-json-1.1',
+        'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth'
+      },
+      body: JSON.stringify({
+        AuthFlow: 'USER_PASSWORD_AUTH',
+        ClientId: CONFIG.CLIENT_ID,
+        AuthParameters: body
+      })
+    }
+  );
+  return res.json();
+}
+
+async function quickLogin(tenant) {
+  document.getElementById('qa-btn').classList.toggle('active', tenant === 'A');
+  document.getElementById('qb-btn').classList.toggle('active', tenant === 'B');
+  document.getElementById('email').value = USERS[tenant].email;
+  document.getElementById('password').value = USERS[tenant].password;
+  await login();
+}
+
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+
+  if (!email || !password) {
+    errEl.textContent = 'Please enter email and password.';
+    return;
+  }
+
+  try {
+    const data = await callCognito({ USERNAME: email, PASSWORD: password });
+    if (data.AuthenticationResult) {
+      currentToken = data.AuthenticationResult.IdToken;
+      currentUser = email;
+      showApp(email);
+      loadTasks();
+      loadProof();
+    } else {
+      errEl.textContent = data.message || 'Login failed. Check credentials.';
+    }
+  } catch(e) {
+    errEl.textContent = 'Connection error. Check your internet.';
+  }
+}
+
+function showApp(email) {
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const tenant = email.includes('companyA') ? 'Company A' : 'Company B';
+  document.getElementById('app-title').textContent = `Tasks — ${tenant}`;
+  document.getElementById('nav-tenant').textContent = tenant;
+  document.getElementById('nav-tenant').style.display = 'block';
+}
+
+async function switchTenant(tenant) {
+  document.getElementById('task-list').innerHTML = '<div class="loading">Switching tenant...</div>';
+  try {
+    const data = await callCognito({
+      USERNAME: USERS[tenant].email,
+      PASSWORD: USERS[tenant].password
+    });
+    if (data.AuthenticationResult) {
+      currentToken = data.AuthenticationResult.IdToken;
+      currentUser = USERS[tenant].email;
+      showApp(USERS[tenant].email);
+      loadTasks();
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function loadTasks() {
+  try {
+    const res = await fetch(`${CONFIG.API_URL}/tasks`, {
+      headers: { Authorization: `Bearer ${currentToken}` }
+    });
+    const data = await res.json();
+    const tasks = data.tasks || [];
+
+    document.getElementById('task-count').textContent = tasks.length;
+
+    if (currentToken) {
+      const payload = JSON.parse(atob(currentToken.split('.')[1]));
+      const tid = payload['custom:tenant_id'] || '';
+      document.getElementById('tenant-id-display').textContent = tid.slice(0,8) + '...';
+    }
+
+    const listEl = document.getElementById('task-list');
+    if (tasks.length === 0) {
+      listEl.innerHTML = '<div class="empty">No tasks yet. Create your first task above.</div>';
+      return;
+    }
+
+    listEl.innerHTML = tasks.map(t => `
+      <div class="task-card">
+        <span class="task-status status-${t.status}">${t.status}</span>
+        <span class="task-title">${t.title}</span>
+        <span class="task-date">${new Date(t.created_at).toLocaleDateString()}</span>
+        <button class="task-del" onclick="deleteTask('${t.task_id}')" title="Delete">×</button>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('task-list').innerHTML = '<div class="empty">Error loading tasks. API may be sleeping — try again.</div>';
+  }
+}
+
+async function createTask() {
+  const titleEl = document.getElementById('new-task-title');
+  const title = titleEl.value.trim();
+  if (!title) return;
+
+  titleEl.value = '';
+  try {
+    await fetch(`${CONFIG.API_URL}/tasks`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${currentToken}`
+      },
+      body: JSON.stringify({ title, status: 'pending' })
+    });
+    loadTasks();
+    loadProof();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function deleteTask(taskId) {
+  try {
+    await fetch(`${CONFIG.API_URL}/tasks/${taskId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${currentToken}` }
+    });
+    loadTasks();
+    loadProof();
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function loadProof() {
+  try {
+    const [dataA, dataB] = await Promise.all([
+      callCognito({ USERNAME: USERS.A.email, PASSWORD: USERS.A.password })
+        .then(d => fetch(`${CONFIG.API_URL}/tasks`, {
+          headers: { Authorization: `Bearer ${d.AuthenticationResult.IdToken}` }
+        })).then(r => r.json()),
+      callCognito({ USERNAME: USERS.B.email, PASSWORD: USERS.B.password })
+        .then(d => fetch(`${CONFIG.API_URL}/tasks`, {
+          headers: { Authorization: `Bearer ${d.AuthenticationResult.IdToken}` }
+        })).then(r => r.json())
+    ]);
+    document.getElementById('proof-a').textContent =
+      `${(dataA.tasks||[]).length} tasks`;
+    document.getElementById('proof-b').textContent =
+      `${(dataB.tasks||[]).length} tasks`;
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+function logout() {
+  currentToken = null;
+  currentUser = null;
+  document.getElementById('login-view').style.display = 'block';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('nav-tenant').style.display = 'none';
+  document.getElementById('email').value = '';
+  document.getElementById('password').value = '';
+  document.getElementById('qa-btn').classList.remove('active');
+  document.getElementById('qb-btn').classList.remove('active');
+}
+</script>
+</body>
+</html>
