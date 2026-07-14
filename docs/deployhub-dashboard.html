@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeployHub — Live Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0C1116;
+    --panel: #131A22;
+    --panel-2: #1A2330;
+    --line: #232E3D;
+    --text: #E7ECF2;
+    --muted: #7C8797;
+    --tenant-a: #4FD1C5;
+    --tenant-a-dim: #1E3A38;
+    --tenant-b: #F5A623;
+    --tenant-b-dim: #3A2E14;
+    --danger: #F0555A;
+    --ok: #34D399;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  header{
+    border-bottom: 1px solid var(--line);
+    padding: 18px 28px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand-mark{
+    width:26px; height:26px; border-radius:6px;
+    background: linear-gradient(135deg, var(--tenant-a), var(--tenant-b));
+  }
+  .brand-name{ font-weight:700; letter-spacing:0.2px; }
+  .brand-sub{ color:var(--muted); font-size:12px; margin-left:8px; }
+  .conn{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
+  .dot{ width:8px; height:8px; border-radius:50%; background:var(--muted); transition: background .2s; }
+  .dot.live{ background: var(--ok); box-shadow: 0 0 0 3px rgba(52,211,153,0.15); }
+
+  main{ flex:1; padding: 32px 28px; max-width: 980px; width:100%; margin:0 auto; }
+
+  /* ---------- Login ---------- */
+  .login-wrap{
+    max-width: 420px;
+    margin: 8vh auto;
+    padding: 32px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .login-wrap h1{ font-size:19px; margin:0 0 4px; }
+  .login-wrap p.sub{ color:var(--muted); font-size:13px; margin:0 0 24px; }
+  label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+  input[type=email], input[type=password], input[type=text]{
+    width:100%; padding:10px 12px; margin-bottom:16px;
+    background: var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    color:var(--text); font-size:14px; font-family:'JetBrains Mono', monospace;
+  }
+  input:focus{ outline:2px solid var(--tenant-a); outline-offset:1px; }
+  button{
+    cursor:pointer; border:none; border-radius:8px; font-weight:600;
+    font-family:'Inter', sans-serif; font-size:14px; padding:10px 16px;
+    transition: transform .08s ease, opacity .15s ease;
+  }
+  button:active{ transform: scale(0.98); }
+  button:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn-primary{ background: var(--tenant-a); color:#08201E; width:100%; }
+  .btn-primary:hover:not(:disabled){ opacity:.9; }
+  .btn-ghost{ background:transparent; border:1px solid var(--line); color:var(--text); }
+  .btn-ghost:hover{ border-color: var(--tenant-a); }
+  .btn-danger{ background: transparent; border:1px solid var(--danger); color:var(--danger); padding:6px 10px; font-size:12px; }
+  .btn-danger:hover{ background: rgba(240,85,90,0.1); }
+
+  .error-box{
+    background: rgba(240,85,90,0.1); border:1px solid var(--danger);
+    color:#FFB4B6; font-size:13px; padding:10px 12px; border-radius:8px; margin-bottom:16px;
+  }
+
+  /* ---------- App shell ---------- */
+  .hidden{ display:none !important; }
+
+  .keycard{
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    padding: 20px 22px;
+    margin-bottom: 22px;
+    display:flex; align-items:center; justify-content:space-between;
+    background: var(--panel);
+    position: relative;
+    overflow:hidden;
+  }
+  .keycard::before{
+    content:''; position:absolute; left:0; top:0; bottom:0; width:4px;
+    background: var(--tenant-color, var(--tenant-a));
+  }
+  .keycard-left{ display:flex; flex-direction:column; gap:4px; }
+  .keycard-label{ font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+  .keycard-tenant{ font-size:16px; font-weight:700; color: var(--tenant-color, var(--tenant-a)); }
+  .keycard-id{ font-size:12px; color:var(--muted); }
+
+  .panel{
+    background: var(--panel); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 20px 22px; margin-bottom: 20px;
+  }
+  .panel h2{ font-size:14px; margin:0 0 16px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; font-weight:600; }
+
+  .new-task-row{ display:flex; gap:10px; }
+  .new-task-row input{ margin-bottom:0; flex:1; }
+  .new-task-row button{ white-space:nowrap; }
+
+  .task-list{ display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+  .task-item{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:12px 14px; background: var(--panel-2); border-radius:8px;
+    border:1px solid var(--line);
+  }
+  .task-title{ font-size:14px; }
+  .task-meta{ font-size:11px; color:var(--muted); margin-top:3px; }
+  .task-status{
+    font-size:11px; padding:3px 8px; border-radius:20px; text-transform:uppercase;
+    background: rgba(79,209,197,0.12); color:var(--tenant-a); margin-right:12px;
+  }
+  .task-right{ display:flex; align-items:center; }
+  .empty-state{ color:var(--muted); font-size:13px; padding:24px; text-align:center; }
+
+  .loading{ color:var(--muted); font-size:13px; padding:16px; text-align:center; }
+
+  footer{ text-align:center; color:var(--muted); font-size:11px; padding:20px; border-top:1px solid var(--line); }
+  a { color: var(--tenant-a); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <span class="brand-name">DeployHub</span>
+    <span class="brand-sub">multi-tenant task console</span>
+  </div>
+  <div class="conn">
+    <div class="dot" id="connDot"></div>
+    <span id="connLabel">not connected</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- LOGIN VIEW -->
+  <div id="loginView" class="login-wrap">
+    <h1>Sign in</h1>
+    <p class="sub">Use a real DeployHub tenant account. Try logging in as two different companies to see isolation live.</p>
+    <div id="loginError" class="error-box hidden"></div>
+    <label for="email">Email</label>
+    <input type="email" id="email" placeholder="companyA@test.com" autocomplete="username">
+    <label for="password">Password</label>
+    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn-primary" id="loginBtn">Sign in</button>
+  </div>
+
+  <!-- APP VIEW -->
+  <div id="appView" class="hidden">
+
+    <div class="keycard" id="tenantCard">
+      <div class="keycard-left">
+        <span class="keycard-label">Signed in as</span>
+        <span class="keycard-tenant" id="tenantEmail">—</span>
+        <span class="keycard-id mono" id="tenantId">tenant_id: —</span>
+      </div>
+      <button class="btn-danger" id="switchBtn">Switch tenant</button>
+    </div>
+
+    <div class="panel">
+      <h2>New task</h2>
+      <div class="new-task-row">
+        <input type="text" id="newTaskTitle" placeholder="Task title…">
+        <button class="btn-primary" style="width:auto;" id="createBtn">Add task</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Tasks for this tenant only</h2>
+      <div id="taskListWrap">
+        <div class="loading">Loading tasks…</div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  DeployHub — AWS Lambda · API Gateway · Cognito · RDS PostgreSQL &nbsp;·&nbsp; <a href="https://github.com/Akhiladussa/Deployhub" target="_blank">github.com/Akhiladussa/Deployhub</a>
+</footer>
+
+<script>
+// ---- Config: your real DeployHub backend ----
+const REGION = "ap-south-1";
+const CLIENT_ID = "90pd9rt6ae9b7r2caapih4df8";
+const API_BASE = "https://ksh3sl6abk.execute-api.ap-south-1.amazonaws.com/dev";
+const COGNITO_IDP_URL = `https://cognito-idp.${REGION}.amazonaws.com/`;
+
+let idToken = null;
+let currentEmail = null;
+
+const $ = (id) => document.getElementById(id);
+const loginView = $('loginView');
+const appView = $('appView');
+
+function setConnected(isLive){
+  $('connDot').classList.toggle('live', isLive);
+  $('connLabel').textContent = isLive ? 'connected' : 'not connected';
+}
+
+function decodeJwt(token){
+  try{
+    const payload = token.split('.')[1];
+    const json = atob(payload.replace(/-/g,'+').replace(/_/g,'/'));
+    return JSON.parse(decodeURIComponent(escape(json)));
+  }catch(e){ return {}; }
+}
+
+// ---- Auth: calls Cognito's InitiateAuth REST endpoint directly ----
+async function login(email, password){
+  const res = await fetch(COGNITO_IDP_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-amz-json-1.1',
+      'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth'
+    },
+    body: JSON.stringify({
+      AuthFlow: 'USER_PASSWORD_AUTH',
+      ClientId: CLIENT_ID,
+      AuthParameters: { USERNAME: email, PASSWORD: password }
+    })
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    const msg = data.message || data.__type || 'Sign-in failed';
+    throw new Error(msg);
+  }
+  return data.AuthenticationResult.IdToken;
+}
+
+$('loginBtn').addEventListener('click', async () => {
+  const email = $('email').value.trim();
+  const password = $('password').value;
+  $('loginError').classList.add('hidden');
+
+  if(!email || !password){
+    $('loginError').textContent = 'Enter both email and password.';
+    $('loginError').classList.remove('hidden');
+    return;
+  }
+
+  $('loginBtn').disabled = true;
+  $('loginBtn').textContent = 'Signing in…';
+
+  try{
+    idToken = await login(email, password);
+    currentEmail = email;
+    enterApp();
+  }catch(err){
+    $('loginError').textContent = err.message.includes('NotAuthorizedException')
+      ? 'Incorrect email or password.'
+      : err.message;
+    $('loginError').classList.remove('hidden');
+  }finally{
+    $('loginBtn').disabled = false;
+    $('loginBtn').textContent = 'Sign in';
+  }
+});
+
+$('switchBtn').addEventListener('click', () => {
+  idToken = null;
+  currentEmail = null;
+  appView.classList.add('hidden');
+  loginView.classList.remove('hidden');
+  $('email').value = '';
+  $('password').value = '';
+  $('loginError').classList.add('hidden');
+  setConnected(false);
+});
+
+function enterApp(){
+  const claims = decodeJwt(idToken);
+  const tenantId = claims['custom:tenant_id'] || 'unknown';
+
+  // Signature moment: tenant identity color-codes the whole card.
+  // Same UI, same code path — only the token changes what you see.
+  const tenantColor = colorForTenant(tenantId);
+  $('tenantCard').style.setProperty('--tenant-color', tenantColor);
+  $('tenantEmail').textContent = currentEmail;
+  $('tenantEmail').style.color = tenantColor;
+  $('tenantId').textContent = 'tenant_id: ' + tenantId;
+
+  loginView.classList.add('hidden');
+  appView.classList.remove('hidden');
+  setConnected(true);
+
+  loadTasks();
+}
+
+function colorForTenant(tenantId){
+  // Deterministic hash so the same tenant always gets the same accent color.
+  let hash = 0;
+  for(let i=0;i<tenantId.length;i++) hash = tenantId.charCodeAt(i) + ((hash<<5)-hash);
+  const palette = ['#4FD1C5', '#F5A623', '#A78BFA', '#F472B6', '#60A5FA'];
+  return palette[Math.abs(hash) % palette.length];
+}
+
+// ---- API calls ----
+async function apiFetch(path, options = {}){
+  const res = await fetch(API_BASE + path, {
+    ...options,
+    headers: {
+      'Authorization': 'Bearer ' + idToken,
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+  if(res.status === 401){
+    throw new Error('Session expired — please sign in again.');
+  }
+  const data = await res.json().catch(() => ({}));
+  if(!res.ok){
+    throw new Error(data.error || 'Request failed (' + res.status + ')');
+  }
+  return data;
+}
+
+async function loadTasks(){
+  const wrap = $('taskListWrap');
+  wrap.innerHTML = '<div class="loading">Loading tasks…</div>';
+  try{
+    const data = await apiFetch('/tasks');
+    renderTasks(data.tasks || []);
+  }catch(err){
+    wrap.innerHTML = `<div class="error-box">${err.message}</div>`;
+  }
+}
+
+function renderTasks(tasks){
+  const wrap = $('taskListWrap');
+  if(tasks.length === 0){
+    wrap.innerHTML = '<div class="empty-state">No tasks yet for this tenant. Add one above.</div>';
+    return;
+  }
+  wrap.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'task-list';
+  tasks.forEach(t => {
+    const item = document.createElement('div');
+    item.className = 'task-item';
+    item.innerHTML = `
+      <div>
+        <div class="task-title">${escapeHtml(t.title)}</div>
+        <div class="task-meta mono">${new Date(t.created_at).toLocaleString()}</div>
+      </div>
+      <div class="task-right">
+        <span class="task-status">${escapeHtml(t.status || 'pending')}</span>
+        <button class="btn-danger" data-id="${t.task_id}">Delete</button>
+      </div>
+    `;
+    list.appendChild(item);
+  });
+  wrap.appendChild(list);
+
+  wrap.querySelectorAll('[data-id]').forEach(btn => {
+    btn.addEventListener('click', () => deleteTask(btn.dataset.id));
+  });
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+$('createBtn').addEventListener('click', async () => {
+  const titleInput = $('newTaskTitle');
+  const title = titleInput.value.trim();
+  if(!title) return;
+
+  $('createBtn').disabled = true;
+  try{
+    await apiFetch('/tasks', {
+      method: 'POST',
+      body: JSON.stringify({ title })
+    });
+    titleInput.value = '';
+    await loadTasks();
+  }catch(err){
+    alert(err.message);
+  }finally{
+    $('createBtn').disabled = false;
+  }
+});
+
+async function deleteTask(taskId){
+  try{
+    await apiFetch('/tasks/' + taskId, { method: 'DELETE' });
+    await loadTasks();
+  }catch(err){
+    alert(err.message);
+  }
+}
+
+$('newTaskTitle').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') $('createBtn').click();
+});
+</script>
+</body>
+</html>
