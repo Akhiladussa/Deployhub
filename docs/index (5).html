@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeployHub — Multi-Tenant SaaS API on AWS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── reset ── */
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Inter',sans-serif;color:#1a1a1a;background:#fdf6f0;}
+a{color:inherit;text-decoration:none;}
+
+/* ── ambient blobs (fixed so they don't scroll) ── */
+.blobs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.blob{position:absolute;border-radius:50%;opacity:.4;}
+.b1{width:500px;height:500px;background:#f9d4e0;top:-120px;left:-120px;}
+.b2{width:400px;height:400px;background:#d4eaf9;top:40px;right:-100px;}
+.b3{width:350px;height:350px;background:#e8d4f9;bottom:-80px;left:30%;}
+.b4{width:300px;height:300px;background:#d4f9e8;bottom:60px;right:5%;}
+
+/* ── layout shell ── */
+.shell{position:relative;z-index:1;display:flex;flex-direction:column;height:100vh;}
+
+/* ── nav ── */
+nav{
+  flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;height:60px;
+  background:rgba(253,246,240,.88);backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(0,0,0,.07);
+}
+.logo{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:#6b4f8a;display:flex;align-items:center;gap:8px;}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:#6b4f8a;box-shadow:0 0 0 3px rgba(107,79,138,.22);}
+.nav-tabs{display:flex;gap:4px;}
+.nav-tab{
+  font-family:'Inter',sans-serif;font-size:13px;color:#666;
+  padding:6px 14px;border-radius:6px;cursor:pointer;
+  transition:all .15s;border:none;background:none;
+}
+.nav-tab:hover{color:#6b4f8a;background:rgba(107,79,138,.08);}
+.nav-tab.active{color:#6b4f8a;background:rgba(107,79,138,.12);font-weight:500;}
+.nav-cta{
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  padding:7px 14px;border:1px solid #b39ddb;border-radius:5px;
+  color:#6b4f8a;transition:all .15s;
+}
+.nav-cta:hover{background:#6b4f8a;color:#fff;border-color:#6b4f8a;}
+
+/* ── page container ── */
+.pages{flex:1;overflow:hidden;position:relative;}
+.page{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:0 60px;
+  opacity:0;transform:translateY(18px);
+  transition:opacity .35s ease,transform .35s ease;
+  pointer-events:none;overflow-y:auto;
+}
+.page.active{opacity:1;transform:translateY(0);pointer-events:all;}
+
+/* ── HOME ── */
+.home-layout{display:grid;grid-template-columns:1fr 420px;gap:48px;align-items:center;max-width:1100px;margin:0 auto;width:100%;}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6b4f8a;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.eyebrow::before{content:'';width:18px;height:1px;background:#6b4f8a;}
+.home-left h1{font-size:38px;font-weight:700;line-height:1.18;letter-spacing:-.02em;color:#1a1a1a;margin-bottom:14px;}
+.home-left h1 em{color:#6b4f8a;font-style:normal;}
+.home-left p{font-size:15px;color:#555;line-height:1.65;max-width:500px;margin-bottom:26px;}
+.btns{display:flex;gap:10px;flex-wrap:wrap;}
+.btn{font-family:'JetBrains Mono',monospace;font-size:12px;padding:9px 18px;border-radius:5px;display:inline-flex;align-items:center;gap:7px;transition:all .15s;cursor:pointer;}
+.btn:hover{transform:translateY(-1px);}
+.btn-main{background:#6b4f8a;color:#fff;border:1px solid #6b4f8a;}
+.btn-main:hover{background:#533c6e;}
+.btn-outline{border:1px solid #ccc;color:#444;background:rgba(255,255,255,.6);}
+.btn-outline:hover{border-color:#6b4f8a;color:#6b4f8a;}
+
+/* proof card */
+.proof-card{background:rgba(255,255,255,.72);border:1px solid rgba(107,79,138,.18);border-radius:14px;padding:24px;backdrop-filter:blur(10px);}
+.proof-header{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b4f8a;text-transform:uppercase;letter-spacing:.06em;margin-bottom:16px;display:flex;align-items:center;gap:7px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(34,197,94,.2);}50%{box-shadow:0 0 0 6px rgba(34,197,94,.08);}}
+.tenant-row{background:rgba(107,79,138,.06);border:1px solid rgba(107,79,138,.1);border-radius:8px;padding:12px 14px;margin-bottom:8px;}
+.tenant-row:last-child{margin-bottom:0;}
+.t-label{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6b4f8a;margin-bottom:4px;}
+.t-count{font-size:22px;font-weight:700;color:#1a1a1a;margin-bottom:2px;}
+.t-note{font-size:12px;color:#666;}
+.t-uuid{font-family:'JetBrains Mono',monospace;font-size:9px;color:#bbb;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.proof-verdict{margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:#22c55e;text-align:center;padding:8px;background:rgba(34,197,94,.06);border-radius:6px;border:1px solid rgba(34,197,94,.15);}
+
+/* ── ARCHITECTURE ── */
+.arch-layout{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;max-width:1100px;margin:0 auto;width:100%;}
+.section-title{font-family:'Inter',sans-serif;font-size:22px;font-weight:600;color:#1a1a1a;margin-bottom:4px;}
+.section-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:#999;margin-bottom:22px;}
+.flow{display:flex;flex-direction:column;gap:0;}
+.flow-step{display:flex;gap:14px;position:relative;}
+.flow-step:not(:last-child)::after{content:'';position:absolute;left:7px;top:22px;bottom:-8px;width:1px;background:#d8c8ef;}
+.flow-dot{width:16px;height:16px;border-radius:50%;border:2px solid #6b4f8a;background:#f3eefa;flex-shrink:0;margin-top:3px;}
+.flow-body{padding-bottom:20px;}
+.flow-name{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:#6b4f8a;margin-bottom:3px;}
+.flow-desc{font-size:13px;color:#555;line-height:1.55;}
+.api-table{border:1px solid rgba(0,0,0,.08);border-radius:8px;overflow:hidden;}
+.api-row{display:grid;grid-template-columns:56px 140px 1fr;border-bottom:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.5);}
+.api-row:last-child{border-bottom:none;}
+.method{font-family:'JetBrains Mono',monospace;font-size:11px;padding:10px 12px;font-weight:600;}
+.m-post{color:#059669;background:rgba(5,150,105,.07);}
+.m-get{color:#2563eb;background:rgba(37,99,235,.07);}
+.m-put{color:#d97706;background:rgba(217,119,6,.07);}
+.m-del{color:#dc2626;background:rgba(220,38,38,.07);}
+.api-path{font-family:'JetBrains Mono',monospace;font-size:11px;padding:10px 12px;color:#333;border-left:1px solid rgba(0,0,0,.06);}
+.api-desc{font-size:12px;padding:10px 12px;color:#555;border-left:1px solid rgba(0,0,0,.06);}
+.note-box{background:rgba(255,255,255,.5);border-left:3px solid #b39ddb;border-radius:0 6px 6px 0;padding:12px 16px;font-size:13px;color:#444;line-height:1.6;margin-top:16px;}
+.note-box code{font-family:'JetBrains Mono',monospace;font-size:11px;background:#ede7f6;padding:1px 5px;color:#4a2f6e;border-radius:3px;}
+
+/* ── STACK ── */
+.stack-layout{max-width:900px;margin:0 auto;width:100%;}
+.stack-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(0,0,0,.07);border:1px solid rgba(0,0,0,.07);border-radius:10px;overflow:hidden;margin-bottom:28px;}
+.stack-cell{background:rgba(255,255,255,.65);padding:18px 16px;backdrop-filter:blur(6px);}
+.stack-cat{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6b4f8a;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.stack-item{font-family:'Inter',sans-serif;font-size:13px;color:#333;margin-bottom:3px;}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.stat-box{background:rgba(255,255,255,.65);border:1px solid rgba(0,0,0,.07);border-radius:8px;padding:16px;backdrop-filter:blur(6px);}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:600;color:#6b4f8a;}
+.stat-label{font-family:'Inter',sans-serif;font-size:12px;color:#666;margin-top:3px;line-height:1.4;}
+
+/* ── OUTCOMES ── */
+.outcomes-layout{max-width:900px;margin:0 auto;width:100%;}
+.outcomes-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.outcome-card{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:20px 18px;backdrop-filter:blur(6px);}
+.oc-num{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:600;color:#6b4f8a;margin-bottom:4px;}
+.oc-title{font-family:'Inter',sans-serif;font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:4px;}
+.oc-sub{font-family:'Inter',sans-serif;font-size:12px;color:#666;line-height:1.5;}
+.resume-box{background:rgba(255,255,255,.6);border:1px solid rgba(107,79,138,.2);border-radius:10px;padding:18px 20px;}
+.resume-title{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b4f8a;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+.resume-text{font-family:'Inter',sans-serif;font-size:13px;color:#444;line-height:1.7;}
+
+/* ── PROGRESS ── */
+.progress-layout{max-width:860px;margin:0 auto;width:100%;}
+.prog-list{border:1px solid rgba(0,0,0,.07);border-radius:10px;overflow:hidden;margin-top:0;}
+.prog-row{display:grid;grid-template-columns:90px 1fr 60px;gap:8px;align-items:start;padding:11px 16px;border-bottom:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.5);}
+.prog-row:last-child{border-bottom:none;}
+.prog-row.done{background:rgba(107,79,138,.04);}
+.p-tag{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:#22c55e;padding-top:1px;}
+.p-tag.todo{color:#aaa;}
+.p-text{font-family:'Inter',sans-serif;font-size:13px;color:#555;}
+.p-text strong{color:#1a1a1a;font-weight:500;}
+.p-badge{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 8px;border-radius:4px;text-align:center;margin-top:1px;}
+.b-live{background:#dcfce7;color:#166534;}
+.b-todo{background:#f3f4f6;color:#9ca3af;}
+.prog-bar-wrap{margin-bottom:20px;}
+.prog-bar-label{display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:11px;color:#888;margin-bottom:6px;}
+.prog-bar-bg{height:8px;background:rgba(0,0,0,.08);border-radius:4px;overflow:hidden;}
+.prog-bar-fill{height:100%;background:#6b4f8a;border-radius:4px;width:100%;transition:width 1s ease;}
+
+/* scrollbar for pages that overflow */
+.page::-webkit-scrollbar{width:4px;}
+.page::-webkit-scrollbar-track{background:transparent;}
+.page::-webkit-scrollbar-thumb{background:rgba(107,79,138,.2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="blobs">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+  <div class="blob b3"></div>
+  <div class="blob b4"></div>
+</div>
+
+<div class="shell">
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo"><span class="logo-dot"></span>DEPLOYHUB</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="show('home',this)">home</button>
+      <button class="nav-tab" onclick="show('arch',this)">architecture</button>
+      <button class="nav-tab" onclick="show('stack',this)">stack</button>
+      <button class="nav-tab" onclick="show('outcomes',this)">outcomes</button>
+      <button class="nav-tab" onclick="show('progress',this)">progress</button>
+    </div>
+    <a href="dashboard.html" class="nav-cta">live dashboard →</a>
+  </nav>
+
+  <!-- PAGES -->
+  <div class="pages">
+
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="home-layout">
+        <div class="home-left">
+          <div class="eyebrow">aws · multi-tenant saas · ap-south-1</div>
+          <h1>One shared system.<br><em>Zero cross-tenant</em><br>data leakage.</h1>
+          <p>A task management API serving multiple isolated companies from the same Lambda functions, same API Gateway, same RDS database — separated by a single enforced rule on every query.</p>
+          <div class="btns">
+            <a href="dashboard.html" class="btn btn-main">open live dashboard ↗</a>
+            <a href="https://github.com/Akhiladussa/Deployhub" target="_blank" class="btn btn-outline">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+              github
+            </a>
+            <a href="#" class="btn btn-outline">watch demo</a>
+          </div>
+        </div>
+        <div class="proof-card">
+          <div class="proof-header"><span class="live-dot"></span>live isolation proof</div>
+          <div class="tenant-row">
+            <div class="t-label">Company A token →</div>
+            <div class="t-count">8 tasks returned</div>
+            <div class="t-note">only Company A data, never Company B</div>
+            <div class="t-uuid">tenant: 36059f0e-0e5a-4ded-a1dd-1006688e0186</div>
+          </div>
+          <div class="tenant-row">
+            <div class="t-label">Company B token →</div>
+            <div class="t-count">2 tasks returned</div>
+            <div class="t-note">only Company B data, never Company A</div>
+            <div class="t-uuid">tenant: a46ce7ed-213c-4e65-b4c8-8194b9e271b3</div>
+          </div>
+          <div class="proof-verdict">✓ zero cross-tenant data leakage verified</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARCHITECTURE -->
+    <div class="page" id="page-arch">
+      <div class="arch-layout">
+        <div>
+          <div class="section-title">How a request flows</div>
+          <div class="section-sub">auth → route → compute → store → notify</div>
+          <div class="flow">
+            <div class="flow-step">
+              <div class="flow-dot"></div>
+              <div class="flow-body">
+                <div class="flow-name">cognito</div>
+                <div class="flow-desc">Validates JWT and confirms which tenant the request belongs to. The custom:tenant_id is baked into every token at login — nobody can fake it.</div>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-dot"></div>
+              <div class="flow-body">
+                <div class="flow-name">api gateway</div>
+                <div class="flow-desc">Single HTTPS entry point. Routes all 4 endpoints to the correct Lambda function regardless of which company is calling.</div>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-dot"></div>
+              <div class="flow-body">
+                <div class="flow-name">lambda (node.js)</div>
+                <div class="flow-desc">Decodes tenant_id from the verified JWT — never from request input. Attaches it as a mandatory filter to every database query.</div>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-dot"></div>
+              <div class="flow-body">
+                <div class="flow-name">rds postgresql + dynamodb</div>
+                <div class="flow-desc">One shared tasks table. Every query carries WHERE tenant_id = $1. Activity logs written to DynamoDB on every write.</div>
+              </div>
+            </div>
+            <div class="flow-step">
+              <div class="flow-dot"></div>
+              <div class="flow-body">
+                <div class="flow-name">sqs + sns + cloudwatch</div>
+                <div class="flow-desc">Async background processing — task creation triggers SQS, worker Lambda logs to DynamoDB and emails via SNS. CloudWatch monitors everything.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-title">Live API endpoints</div>
+          <div class="section-sub">ksh3sl6abk.execute-api.ap-south-1.amazonaws.com/dev</div>
+          <div class="api-table">
+            <div class="api-row">
+              <div class="method m-post">POST</div>
+              <div class="api-path">/tasks</div>
+              <div class="api-desc">Create task — auto-scoped to tenant</div>
+            </div>
+            <div class="api-row">
+              <div class="method m-get">GET</div>
+              <div class="api-path">/tasks</div>
+              <div class="api-desc">List tasks — only that tenant's data</div>
+            </div>
+            <div class="api-row">
+              <div class="method m-put">PUT</div>
+              <div class="api-path">/tasks/{id}</div>
+              <div class="api-desc">Update — cross-tenant blocked</div>
+            </div>
+            <div class="api-row">
+              <div class="method m-del">DELETE</div>
+              <div class="api-path">/tasks/{id}</div>
+              <div class="api-desc">Delete — cross-tenant blocked</div>
+            </div>
+          </div>
+          <div class="note-box">
+            Security rule: tenant_id is read from <code>JWT payload['custom:tenant_id']</code> only. Even if a user sends a different tenant_id in the request body, it is completely ignored.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STACK -->
+    <div class="page" id="page-stack">
+      <div class="stack-layout">
+        <div class="section-title">Stack</div>
+        <div class="section-sub">13+ aws services · node.js · postgresql · rest api · ci/cd</div>
+        <div class="stack-grid">
+          <div class="stack-cell">
+            <div class="stack-cat">identity</div>
+            <div class="stack-item">Cognito</div>
+            <div class="stack-item">IAM</div>
+            <div class="stack-item">Secrets Manager</div>
+          </div>
+          <div class="stack-cell">
+            <div class="stack-cat">networking</div>
+            <div class="stack-item">VPC</div>
+            <div class="stack-item">Subnets (4)</div>
+            <div class="stack-item">NAT Gateway</div>
+          </div>
+          <div class="stack-cell">
+            <div class="stack-cat">compute</div>
+            <div class="stack-item">Lambda (5×)</div>
+            <div class="stack-item">API Gateway</div>
+          </div>
+          <div class="stack-cell">
+            <div class="stack-cat">data</div>
+            <div class="stack-item">RDS PostgreSQL</div>
+            <div class="stack-item">DynamoDB</div>
+          </div>
+          <div class="stack-cell">
+            <div class="stack-cat">messaging</div>
+            <div class="stack-item">SQS</div>
+            <div class="stack-item">SNS</div>
+            <div class="stack-item">DLQ</div>
+          </div>
+          <div class="stack-cell">
+            <div class="stack-cat">devops</div>
+            <div class="stack-item">CodePipeline</div>
+            <div class="stack-item">CodeBuild</div>
+            <div class="stack-item">S3 artifacts</div>
+          </div>
+          <div class="stack-cell">
+            <div class="stack-cat">observability</div>
+            <div class="stack-item">CloudWatch</div>
+            <div class="stack-item">Dashboards</div>
+            <div class="stack-item">Alarms (3)</div>
+          </div>
+          <div class="stack-cell">
+            <div class="stack-cat">language</div>
+            <div class="stack-item">Node.js 18</div>
+            <div class="stack-item">PostgreSQL 15</div>
+            <div class="stack-item">REST / JWT</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-num">13+</div>
+            <div class="stat-label">AWS services integrated</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">5</div>
+            <div class="stat-label">Lambda functions deployed</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">9</div>
+            <div class="stat-label">days to build end-to-end</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num">2</div>
+            <div class="stat-label">AZs for high availability</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTCOMES -->
+    <div class="page" id="page-outcomes">
+      <div class="outcomes-layout">
+        <div class="section-title">Outcomes</div>
+        <div class="section-sub">measured and verified — not claimed</div>
+        <div class="outcomes-grid">
+          <div class="outcome-card">
+            <div class="oc-num">0</div>
+            <div class="oc-title">Cross-tenant data leaks</div>
+            <div class="oc-sub">Verified live — Company A token never returned Company B data across all 4 endpoints</div>
+          </div>
+          <div class="outcome-card">
+            <div class="oc-num">4</div>
+            <div class="oc-title">REST endpoints built</div>
+            <div class="oc-sub">POST, GET, PUT, DELETE — every one authenticated and tenant-scoped at the query level</div>
+          </div>
+          <div class="outcome-card">
+            <div class="oc-num">~2 min</div>
+            <div class="oc-title">Auto-deploy time</div>
+            <div class="oc-sub">CodePipeline deploys all 5 Lambda functions automatically on every GitHub push — zero manual steps</div>
+          </div>
+          <div class="outcome-card">
+            <div class="oc-num">3</div>
+            <div class="oc-title">CloudWatch alarms</div>
+            <div class="oc-sub">Lambda errors, high duration, and DLQ depth — all alerting via SNS email in real time</div>
+          </div>
+        </div>
+        <div class="resume-box">
+          <div class="resume-title">resume description</div>
+          <div class="resume-text">Built a production-grade multi-tenant SaaS REST API on AWS — 5 Lambda functions, 4 CRUD endpoints, zero cross-tenant data leakage verified live across 2 isolated tenants. Async messaging via SQS + SNS with DLQ. CI/CD pipeline auto-deploys on GitHub push via CodePipeline + CodeBuild. 13+ AWS services across compute, networking, security, database, messaging and DevOps domains.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="page" id="page-progress">
+      <div class="progress-layout">
+        <div class="section-title">Build progress</div>
+        <div class="section-sub">9 of 9 phases complete · project finished</div>
+        <div class="prog-bar-wrap">
+          <div class="prog-bar-label"><span>completion</span><span>100%</span></div>
+          <div class="prog-bar-bg"><div class="prog-bar-fill"></div></div>
+        </div>
+        <div class="prog-list">
+          <div class="prog-row done"><span class="p-tag">day 1 ✓</span><span class="p-text"><strong>Setup</strong> — AWS account, IAM user, CLI, billing alarm, GitHub Pages live</span><span class="p-badge b-live">live</span></div>
+          <div class="prog-row done"><span class="p-tag">day 2 ✓</span><span class="p-text"><strong>Networking</strong> — VPC, 4 subnets across 2 AZs, NAT Gateway, bastion SSH</span><span class="p-badge b-live">live</span></div>
+          <div class="prog-row done"><span class="p-tag">day 3 ✓</span><span class="p-text"><strong>Databases + Auth</strong> — RDS schema, DynamoDB, Cognito, JWT with tenant_id</span><span class="p-badge b-live">live</span></div>
+          <div class="prog-row done"><span class="p-tag">day 4 ✓</span><span class="p-text"><strong>Serverless API</strong> — Lambda + API Gateway, POST + GET, isolation proved live</span><span class="p-badge b-live">live</span></div>
+          <div class="prog-row done"><span class="p-tag">day 5 ✓</span><span class="p-text"><strong>Full CRUD</strong> — PUT + DELETE Lambda functions, complete REST API</span><span class="p-badge b-live">live</span></div>
+          <div class="prog-row done"><span class="p-tag">day 6 ✓</span><span class="p-text"><strong>Async Messaging</strong> — SQS, SNS, worker Lambda, Dead Letter Queue</span><span class="p-badge b-live">live</span></div>
+          <div class="prog-row done"><span class="p-tag">day 7 ✓</span><span class="p-text"><strong>CI/CD Pipeline</strong> — CodePipeline + CodeBuild, auto-deploy on git push</span><span class="p-badge b-live">live</span></div>
+          <div class="prog-row done"><span class="p-tag">day 8 ✓</span><span class="p-text"><strong>Observability</strong> — CloudWatch dashboard, 3 alarms, live dashboard webpage</span><span class="p-badge b-live">live</span></div>
+          <div class="prog-row done"><span class="p-tag">day 9 ✓</span><span class="p-text"><strong>Capture + Teardown</strong> — demo video, final docs, all resources deleted</span><span class="p-badge b-live">done</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pages -->
+</div><!-- /shell -->
+
+<script>
+function show(id, btn) {
+  // hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // deactivate all tabs
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  // show selected
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
